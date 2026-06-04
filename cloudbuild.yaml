@@ -1,0 +1,60 @@
+# Cloud Build — builds the Documenso (AveryIQ fork) image and pushes it to
+# Artifact Registry. Coolify pulls and runs it as a standalone app (see
+# docker-compose.documenso.yml in the andrew-avery repo).
+#
+# This is a separate pipeline from the main AveryIQ cloudbuild.yaml because the
+# Documenso source lives in this fork repo, not the monorepo — the build context
+# is this repository's root, built against docker/Dockerfile (a full npm/turbo
+# build, so it needs a beefy machine + long timeout).
+#
+# Image: <region>-docker.pkg.dev/$PROJECT_ID/avery/documenso:<tag>
+#
+# Manual build (pin the tag to a short sha or version for prod):
+#   gcloud builds submit --config=cloudbuild.yaml \
+#     --substitutions=_IMAGE_TAG="$(git rev-parse --short HEAD)"
+#
+# Or set _IMAGE_TAG=latest for the moving tag:
+#   gcloud builds submit --config=cloudbuild.yaml
+#
+# Optional: wire a Cloud Build trigger on this fork repo (push to main) that
+# passes _IMAGE_TAG=$SHORT_SHA so each commit produces an immutable image.
+#
+# The image is environment-agnostic: Documenso reads NEXT_PUBLIC_* / webapp URL
+# at runtime, and the Dockerfile's encryption-key build args have build-time
+# defaults (real keys are supplied at runtime), so no build args are needed.
+
+substitutions:
+  _REGION: 'us-central1'
+  _REPO: 'avery'
+  _IMAGE_TAG: 'latest'
+
+options:
+  machineType: 'E2_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+  env:
+    - 'DOCKER_BUILDKIT=1'
+
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-documenso'
+    args:
+      - 'build'
+      - '-f'
+      - 'docker/Dockerfile'
+      - '--build-arg'
+      - 'BUILDKIT_INLINE_CACHE=1'
+      # No-op on the first build (image doesn't exist yet); speeds up rebuilds.
+      - '--cache-from'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/documenso:${_IMAGE_TAG}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/documenso:${_IMAGE_TAG}'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-documenso'
+    waitFor: ['build-documenso']
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/documenso:${_IMAGE_TAG}'
+
+timeout: '2400s' # 40 min — Documenso is a full monorepo build

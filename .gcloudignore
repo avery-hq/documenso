@@ -1,0 +1,11 @@
+# gcloud's default (auto-generated) .gcloudignore excludes BOTH `.git` and
+# `.gitignore` from the uploaded build context. Documenso's docker/Dockerfile
+# does `COPY .gitignore .gitignore`, so the build fails ("/.gitignore not found")
+# unless `.gitignore` is uploaded.
+#
+# This file keeps `.gitignore` in the context: we only drop the `.git` directory,
+# then reuse `.gitignore`'s patterns (node_modules, build output, etc.) so the
+# uploaded tarball stays small.
+.git/
+
+#!include:.gitignore
