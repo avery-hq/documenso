@@ -17,6 +17,14 @@ declare namespace NodeJS {
     NEXT_PRIVATE_ENCRYPTION_KEY: string;
     NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY: string;
 
+    /**
+     * Machine-to-machine tenant provisioning (AveryIQ fork addition).
+     * Shared bearer secret guarding POST /api/provisioning/tenant, and the
+     * email of the service ADMIN user that owns provisioned organisations.
+     */
+    NEXT_PRIVATE_PROVISIONING_SECRET?: string;
+    NEXT_PRIVATE_PROVISIONING_OWNER_EMAIL?: string;
+
     NEXT_PRIVATE_LOGGER_FILE_PATH?: string;
 
     NEXT_PRIVATE_STRIPE_API_KEY: string;
