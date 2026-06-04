@@ -27,6 +27,7 @@ import type { Logger } from 'pino';
 import { aiRoute } from './api/ai/route';
 import { downloadRoute } from './api/download/download';
 import { filesRoute } from './api/files/files';
+import { provisioningRoute } from './api/provisioning/provisioning';
 import { type AppContext, appContext } from './context';
 import { appMiddleware } from './middleware';
 import { securityHeadersMiddleware } from './security-headers';
@@ -119,6 +120,10 @@ app.route('/api/csc', csc);
 // API servers.
 app.route('/api/v1', tsRestHonoApp);
 app.use('/api/jobs/*', jobsClient.getApiHandler());
+
+// Machine-to-machine tenant provisioning (AveryIQ fork addition). Lives outside
+// the public /api/v1 and /api/v2 namespaces and is guarded by a shared secret.
+app.route('/api/provisioning', provisioningRoute);
 
 app.use('/api/trpc/*', trpcRateLimitMiddleware);
 app.use('/api/trpc/*', reactRouterTrpcServer);
