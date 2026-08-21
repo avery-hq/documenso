@@ -86,6 +86,8 @@ COPY turbo.json turbo.json
 
 RUN npm install -g "turbo@^2.10.0"
 
+# v2.17 Remix/rollup exceeds Node's default heap on 8 GB builders (exit 134).
+ENV NODE_OPTIONS="--max-old-space-size=12288"
 RUN turbo run build --filter=@documenso/remix...
 
 ###########################
